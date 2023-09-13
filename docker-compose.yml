@@ -1,0 +1,45 @@
+version: '3'
+services:
+  httpd:
+    build: .
+    ports:
+      - '18081:80'
+    networks:
+      - mod_auth_openidc-test
+    depends_on:
+      - keycloak
+  mysql:
+    image: mysql:8
+    command: 'mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci'
+    environment:
+      MYSQL_ROOT_HOST: '%'
+      MYSQL_ROOT_USER: root
+      MYSQL_ROOT_PASSWORD: passw0rd
+      TZ: 'Asia/Tokyo'
+    ports:
+      - '3306:3306'
+    networks:
+      - mod_auth_openidc-test
+  keycloak:
+    image: quay.io/keycloak/keycloak:19.0.2
+    environment:
+      DB_VENDOR: mysql
+      DB_ADDR: mysql
+      DB_DATABASE: keycloak
+      DB_USER: root
+      DB_PASSWORD: passw0rd
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    volumes:
+      - ./realm-export.json:/opt/keycloak/data/import/realm-export.json
+    entrypoint: /opt/keycloak/bin/kc.sh start-dev --import-realm
+    ports:
+      - '8100:8080'
+    networks:
+      - mod_auth_openidc-test
+    depends_on:
+      - mysql
+
+networks:
+  mod_auth_openidc-test:
+    external: true
